@@ -37,7 +37,7 @@ public class Cliente implements Runnable{
 				System.out.println(tokenPagarONo);
 				//Al recibir mensaje, significa que puedo pagar, por tanto, deberé hacer un Sleep del tiempoAsignado y enviar una notificación cuando haya pagado para liberar la caja
 				try {
-					Thread.sleep(this.tiempoEstimado * 1000);
+					Thread.sleep(this.tiempoEstimado * 1); //FIXME timer
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

@@ -8,9 +8,9 @@ import messagepassing.Selector;
 public class Controlador implements Runnable {
 	private MailBox envioControlador;
 	private MailBox[] recepcionControlador;
-	private MailBox[] recepcionColaCaja;
+	private MailBox recepcionColaCaja;
 	private MailBox[] envioPagarCaja;
-	private MailBox[] impresionTerminal;
+	private MailBox impresionTerminal;
 	private MailBox[] enviarPermisoImpresion;
 	private Selector selector;
 	private LinkedList<Integer> colaCajaA;
@@ -19,8 +19,8 @@ public class Controlador implements Runnable {
 	private boolean cajaBLibre;
 	
 	public Controlador(MailBox envioControlador, MailBox[] recepcionControlador, 
-			MailBox[] recepcionColaCaja,
-			MailBox[] envioPagarCaja, MailBox[] impresionTerminal,  MailBox[] enviarPermisoImpresion) {
+			MailBox recepcionColaCaja,
+			MailBox[] envioPagarCaja, MailBox impresionTerminal,  MailBox[] enviarPermisoImpresion) {
 		this.envioControlador = envioControlador;
 		this.recepcionControlador = recepcionControlador;
 		this.recepcionColaCaja = recepcionColaCaja;
@@ -53,23 +53,21 @@ public class Controlador implements Runnable {
 					//break;
 				case 2:
 					//En este caso accederemos a la recepcionColaCaja y pondremos a la persona en la cola de la caja asignada
-					for (int i = 0; i < recepcionColaCaja.length; i++) {
-						Object tokenColaCaja = recepcionColaCaja[i].receive(); //Aqui recibiremos el ID|Caja
-						if (tokenColaCaja != null) {
-							int idColaCaja = getIDFromToken(tokenColaCaja);
-							String caja = getCajaFromToken(tokenColaCaja);
-							if (!isCajaLibre(caja)) {
-								System.out.println("Controlador envia a la cola de la caja " + caja + " al cliente " + idColaCaja);
-                                enviarAColaCaja(idColaCaja, caja);
-                                break;
-                            } else {
-                            	cajaOcupada(caja);
-                                System.out.println("Controlador envia a caja " + caja + " al cliente " + idColaCaja + " A PAGAR DIRECTAMENTE");
-                                selector.addSelectable(envioPagarCaja[i], false);
-                                envioPagarCaja[i].send(tokenColaCaja);
+					Object tokenColaCaja = recepcionColaCaja.receive(); //Aqui recibiremos el ID|Caja
+					if (tokenColaCaja != null) {
+						int idColaCaja = getIDFromToken(tokenColaCaja);
+						String caja = getCajaFromToken(tokenColaCaja);
+						if (!isCajaLibre(caja)) {
+							System.out.println("Controlador envia a la cola de la caja " + caja + " al cliente " + idColaCaja);
+                            enviarAColaCaja(idColaCaja, caja);
+                        } else {
+                        	cajaOcupada(caja);
+                            System.out.println("Controlador envia a caja " + caja + " al cliente " + idColaCaja + " A PAGAR DIRECTAMENTE");
+                            selector.addSelectable(envioPagarCaja[idColaCaja], false);
+                            envioPagarCaja[idColaCaja].send(tokenColaCaja);
 
-                            }
-						}
+                        }
+						
 					}
 				case 3:
 					/*Aqui tendremos dos opciones, puede que la caja ya este libre y tengamos que responder a un cliente
@@ -78,18 +76,17 @@ public class Controlador implements Runnable {
 					 * 
 					 * Sabremos que la caja esta libre cuando recibimos el mensaje de impresionPorTerminal, sino, estara pagando
 					 */
-					for (int i = 0; i < impresionTerminal.length; i++) {
-						Object tokenPermisoImpresion = impresionTerminal[i].receive();
-						String cajaLiberada = getCajaFromToken(tokenPermisoImpresion);
-						int idImpresion = getIDFromToken(tokenPermisoImpresion);
-						liberarCaja(cajaLiberada); 
-						/* Quedara liberada y podemos dar paso al siguiente en la cola
-						 * tambien hay que dar permiso de impresion de ticket
-                         */
-						enviarPermisoImpresion[idImpresion].send(idImpresion);
+					Object tokenPermisoImpresion = impresionTerminal.receive();
+					String cajaLiberada = getCajaFromToken(tokenPermisoImpresion);
+					int idImpresion = getIDFromToken(tokenPermisoImpresion);
+					liberarCaja(cajaLiberada); 
+					/* Quedara liberada y podemos dar paso al siguiente en la cola
+					 * tambien hay que dar permiso de impresion de ticket
+                     */
+					enviarPermisoImpresion[idImpresion].send(idImpresion);
 						
-						
-					}
+					break;
+					
 				
 			}
 
@@ -165,15 +162,15 @@ public class Controlador implements Runnable {
 		for (int i = 0; i < recepcionControlador.length; i++) {
 			selector.addSelectable(recepcionControlador[i], false);
 		}
-		for (int i = 0; i < recepcionColaCaja.length; i++) {
+		/*for (int i = 0; i < recepcionColaCaja.length; i++) {
 			selector.addSelectable(recepcionColaCaja[i], false);
-		}
+		}*/
 		for (int i = 0; i < envioPagarCaja.length; i++) {
 			selector.addSelectable(envioPagarCaja[i], false);
 		}
-		for (int i = 0; i < impresionTerminal.length; i++) {
+		/*for (int i = 0; i < impresionTerminal.length; i++) {
 			selector.addSelectable(impresionTerminal[i], false);
-		}
+		}*/
 		for (int i = 0; i < enviarPermisoImpresion.length; i++) {
             selector.addSelectable(enviarPermisoImpresion[i], false);
         }

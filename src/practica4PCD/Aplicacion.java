@@ -6,13 +6,13 @@ public class Aplicacion {
 	
 
 	public static void main(String[] args) {
-		int numClientes = 1;
+		int numClientes = 2;
 
 		MailBox envioControlador = new MailBox();
 		MailBox[] recepcionControlador = new MailBox[numClientes]; 
-		MailBox[] recepcionColaCaja = new MailBox[numClientes];
+		MailBox recepcionColaCaja = new MailBox();
 		MailBox[] envioPagarCaja = new MailBox[numClientes];
-		MailBox[] impresionTerminal = new MailBox[numClientes];
+		MailBox impresionTerminal = new MailBox();
 		MailBox[] enviarPermisoImpresion = new MailBox[numClientes];
 
 		for (int i = 0; i < numClientes; i++) {
@@ -22,9 +22,7 @@ public class Aplicacion {
 			MailBox impresionTerminalBucle = new MailBox();
 			MailBox enviarPermisoImpresionBucle = new MailBox();
 			recepcionControlador[i] = recepcionControlado;
-			recepcionColaCaja[i] = envioColaCaja;
 			envioPagarCaja[i] = recepcionPagarCaja;
-			impresionTerminal[i] = impresionTerminalBucle;
 			enviarPermisoImpresion[i] = enviarPermisoImpresionBucle;
 			
 		}
@@ -40,7 +38,7 @@ public class Aplicacion {
 		}
 		for (int i = 0; i < numClientes; i++) {
 			Cliente cliente = new Cliente(i, envioControlador, recepcionControlador[i],
-					recepcionColaCaja[i], envioPagarCaja[i], impresionTerminal[i], enviarPermisoImpresion[i]);
+					recepcionColaCaja, envioPagarCaja[i], impresionTerminal, enviarPermisoImpresion[i]);
 			Thread hiloCliente = new Thread(cliente);
 			hiloCliente.start();
 		}
