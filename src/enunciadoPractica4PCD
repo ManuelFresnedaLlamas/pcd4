@@ -1,0 +1,23 @@
+Consideremos un conjunto de 30 personas que compran y tiene que pagar las compra.
+Para pagar hay dos cajas, caja A y B siendo la caja A más rápida que la B. Cada persona tiene
+que usar una caja para pagar durante un tiempo estimado (valor aleatorio entre 1 y 10) por la
+persona que controla las cajas. El controlador de cajas, cuando recibe llega una nueva persona
+a pagar estima el tiempo de pago y a aquellas personas cuyo tiempo estimado sea mayor o
+igual a 5 se les asignará la caja más rápida, es decir, la A. A las demás personas se les asignará
+la caja B. Cada persona comprará y pagará 5 veces, es decir, el hilo repite 5 veces la siguiente
+secuencia de acciones: 1) Realiza la compra (representado con una llamada
+Thread.sleep(tiempoAleatorio)), 2) solicita ponerse en una caja, 3) Realiza el pago en la caja,
+4) libera la caja y 5) imprime en pantalla la información que se indica a continuación:
+--------------------------------------------------------------
+“Persona id ha usado la caja X
+ Tiempo de pago= T
+ Thread.sleep(T)
+ Persona id liberando la caja X”
+--------------------------------------------------------------
+donde X es la caja asignada y T el tiempo asignado al trabajo que quiere imprimir el
+hilo.
+Desarrollar un programa concurrente en Java para resolver el problema anterior usando
+como mecanismo para la sincronización el paso de mensajes asíncrono.
+a) (0.5 puntos sobre 10) ¿Se pueden usar simultáneamente las dos cajas? Justifica la
+respuesta.
+b) (0.5 puntos sobre 10) ¿Cómo has resuelto la exclusión mutua de la pantalla?           
