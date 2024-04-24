@@ -12,6 +12,7 @@ public class Controlador implements Runnable {
 	private MailBox[] envioPagarCaja;
 	private MailBox impresionTerminal;
 	private MailBox[] enviarPermisoImpresion;
+	private MailBox liberarTerminal;
 	private Selector selector;
 	private LinkedList<Integer> colaCajaA;
 	private LinkedList<Integer> colaCajaB;
@@ -20,13 +21,14 @@ public class Controlador implements Runnable {
 	
 	public Controlador(MailBox envioControlador, MailBox[] recepcionControlador, 
 			MailBox recepcionColaCaja,
-			MailBox[] envioPagarCaja, MailBox impresionTerminal,  MailBox[] enviarPermisoImpresion) {
+			MailBox[] envioPagarCaja, MailBox impresionTerminal,  MailBox[] enviarPermisoImpresion, MailBox liberarTerminal) {
 		this.envioControlador = envioControlador;
 		this.recepcionControlador = recepcionControlador;
 		this.recepcionColaCaja = recepcionColaCaja;
 		this.envioPagarCaja = envioPagarCaja;
 		this.impresionTerminal = impresionTerminal;
 		this.enviarPermisoImpresion = enviarPermisoImpresion;
+		this.liberarTerminal = liberarTerminal;
 		this.colaCajaA = new LinkedList<Integer>();
 		this.colaCajaB = new LinkedList<Integer>();
 		this.selector = new Selector();
@@ -38,65 +40,69 @@ public class Controlador implements Runnable {
 	@Override
 	public void run() {
 		while (true) {
-			
+			//System.out.println("Controlador esperando mensaje de cliente");
 			selector.addSelectable(envioControlador, false);
 			prepararSelector();
 			switch (selector.selectOrBlock()) {
 				case 1:
 					Object token = envioControlador.receive();
 					int id = getIDFromToken(token);
-					System.out.println("Controlador lee mensaje de clienteID: " + id);
+					//System.out.println("Controlador lee mensaje de clienteID: " + id);
 					int tiempoEstimado = (int) (Math.random() * 10 + 1);
 					String cajaAsignada = asignarCaja(tiempoEstimado);
 					String tokenToSend = createToken(id, cajaAsignada, tiempoEstimado);
 					recepcionControlador[id].send(tokenToSend);
-					//break;
 				case 2:
-					//En este caso accederemos a la recepcionColaCaja y pondremos a la persona en la cola de la caja asignada
-					Object tokenColaCaja = recepcionColaCaja.receive(); //Aqui recibiremos el ID|Caja
+					Object tokenColaCaja = recepcionColaCaja.receive();
 					if (tokenColaCaja != null) {
 						int idColaCaja = getIDFromToken(tokenColaCaja);
 						String caja = getCajaFromToken(tokenColaCaja);
+						//System.out.print(this.cajaALibre);
+						//System.out.println(this.cajaBLibre);
 						if (!isCajaLibre(caja)) {
-							System.out.println("Controlador envia a la cola de la caja " + caja + " al cliente " + idColaCaja);
-                            enviarAColaCaja(idColaCaja, caja);
+							//System.out.println("Controlador envia a la cola de la caja " + caja + " al cliente " + idColaCaja);
+							//System.out.print(this.cajaALibre);
+							//System.out.println(this.cajaBLibre);
+							//System.out.println("DEJARA PROCESO BLOQUEADO ESPERANDO RESPUESTA, POR TANTO LO TIRAMOS DE NUEVO");
+							recepcionColaCaja.send(tokenColaCaja);
+                           // enviarAColaCaja(idColaCaja, caja);
                         } else {
                         	cajaOcupada(caja);
-                            System.out.println("Controlador envia a caja " + caja + " al cliente " + idColaCaja + " A PAGAR DIRECTAMENTE");
-                            selector.addSelectable(envioPagarCaja[idColaCaja], false);
+                            //System.out.println("Controlador envia a caja " + caja + " al cliente " + idColaCaja + " A PAGAR DIRECTAMENTE");
+                            //selector.addSelectable(envioPagarCaja[idColaCaja], false);
                             envioPagarCaja[idColaCaja].send(tokenColaCaja);
-
                         }
 						
 					}
 				case 3:
-					/*Aqui tendremos dos opciones, puede que la caja ya este libre y tengamos que responder a un cliente
-					 * de que ya puede pagar,o las cajas pueden seguir estando ocupadas y deberemos analizar si se ha recibido un mensaje
-					 * de un cliente que ha pagado y quiere imprimir por pantalla, a lo cual deberemos darle permiso.
-					 * 
-					 * Sabremos que la caja esta libre cuando recibimos el mensaje de impresionPorTerminal, sino, estara pagando
-					 */
 					Object tokenPermisoImpresion = impresionTerminal.receive();
+					//System.out.println("Controlador recibe mensaje de impresion " + tokenPermisoImpresion);
 					String cajaLiberada = getCajaFromToken(tokenPermisoImpresion);
 					int idImpresion = getIDFromToken(tokenPermisoImpresion);
-					liberarCaja(cajaLiberada); 
-					/* Quedara liberada y podemos dar paso al siguiente en la cola
-					 * tambien hay que dar permiso de impresion de ticket
-                     */
-					enviarPermisoImpresion[idImpresion].send(idImpresion);
-						
-					break;
-					
-				
+					//System.out.println(cajaLiberada + " " + idImpresion);
+					if (!isCajaLibre(cajaLiberada)) {
+						//System.out.println("Controlador envia permiso de impresion al cliente " + idImpresion);
+						enviarPermisoImpresion[idImpresion].send(idImpresion);
+					} else {
+						//System.out.println("Controlador envia a la cola de la caja " + cajaLiberada + " al cliente " + idImpresion);
+						impresionTerminal.send(tokenPermisoImpresion);
+					}
+				case 4:
+					// En este caso, recibiremos un mensaje de liberarTerminal, por tanto, deberemos
+					// liberar la caja
+					Object cajaLiberadaPorCliente =  liberarTerminal.receive();
+					//System.out.println("Controlador recibe mensaje de liberar caja " + cajaLiberadaPorCliente);
+					liberarCaja((String)cajaLiberadaPorCliente);
 			}
-
 		}	
 	}
 	
 	public void liberarCaja(String caja) {
 		if (caja.equals("A")) {
+			//System.out.println("Controlador libera caja A");
 			cajaALibre = true;
 		} else {
+			//System.out.println("Controlador libera caja B");
 			cajaBLibre = true;
 		}
 	}
@@ -104,7 +110,7 @@ public class Controlador implements Runnable {
 	public void cajaOcupada(String caja) {
 		if (caja.equals("A")) {
 			cajaALibre = false;
-		} else {
+		} else if (caja.equals("B")) {
 			cajaBLibre = false;
 		}
 	}
@@ -142,7 +148,6 @@ public class Controlador implements Runnable {
 			return "B";
 		}
 	}
-	
 	
 	public String getCajaFromToken(Object token) {
 		String[] tokenParts = token.toString().split("\\|");

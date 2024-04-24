@@ -1,5 +1,7 @@
 package practica4PCD;
 
+import java.util.Random;
+
 import messagepassing.MailBox;
 
 public class Cliente implements Runnable{
@@ -9,8 +11,9 @@ public class Cliente implements Runnable{
 	private MailBox envioColaCaja;
 	private MailBox recepcionPagarCaja;
 	private MailBox impresionTerminal, enviarPermisoImpresion;
+	private MailBox liberarTerminal;
 	
-	public Cliente(int id, MailBox envioControlador, MailBox recepcionControlador, MailBox envioColaCaja, MailBox recepcionPagarCaja, MailBox impresionTerminal, MailBox enviarPermisoImpresion){
+	public Cliente(int id, MailBox envioControlador, MailBox recepcionControlador, MailBox envioColaCaja, MailBox recepcionPagarCaja, MailBox impresionTerminal, MailBox enviarPermisoImpresion, MailBox liberarTerminal){
 		this.id = id;
 		this.tiempoEstimado = 0;
 		this.envioControlador = envioControlador;
@@ -19,25 +22,35 @@ public class Cliente implements Runnable{
 		this.recepcionPagarCaja = recepcionPagarCaja;
 		this.impresionTerminal = impresionTerminal;
 		this.enviarPermisoImpresion = enviarPermisoImpresion;
+		this.liberarTerminal = liberarTerminal;
 	}
 	
 	@Override
 	public void run() {
+		try {
+			Random rand = new Random();
+            int tiempoAleatorio = rand.nextInt(1000) + 1;
+                // Duerme el hilo durante el tiempo aleatorio generado
+            Thread.sleep(tiempoAleatorio);				
+        } catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		for (int i = 0; i < 5; i++) {
 			while(true) { //Repetirá 5 veces esto
-			    System.out.println("Cliente " + this.id + " envía mensaje al controlador");
+
+			    //System.out.println("Cliente " + this.id + " envía mensaje al controlador");
 				envioControlador.send(this.id);
 				Object token = recepcionControlador.receive();
-				//System.out.println("Cliente " + this.id + " recibe token: " + token);
 				String cajaAsignada = getCajaFromToken(token);
 				this.tiempoEstimado = getTiempoEstimadoFromToken(token);
 				envioColaCaja.send(this.id + "|" + cajaAsignada);
-				System.out.println("Cliente " + this.id + " envía mensaje de que quiere pagar en la caja " + cajaAsignada);
+				//System.out.println("Cliente " + this.id + " envía mensaje de que quiere pagar en la caja " + cajaAsignada);
 				Object tokenPagarONo = recepcionPagarCaja.receive();
-				System.out.println(tokenPagarONo);
+				//System.out.println(tokenPagarONo);
 				//Al recibir mensaje, significa que puedo pagar, por tanto, deberé hacer un Sleep del tiempoAsignado y enviar una notificación cuando haya pagado para liberar la caja
 				try {
-					Thread.sleep(this.tiempoEstimado * 1); //FIXME timer
+					Thread.sleep(this.tiempoEstimado * 100); //FIXME timer
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -46,12 +59,14 @@ public class Cliente implements Runnable{
 				impresionTerminal.send(createToken(this.id, cajaAsignada, this.tiempoEstimado));
 				Object tokenPermiso = enviarPermisoImpresion.receive();
 				int idPermiso = (int) (tokenPermiso);
+				//System.out.println("Cliente: " + this.id + "Recibe Permiso: " + idPermiso);
 				if (idPermiso == this.id) {
 				    imprimirTicket(cajaAsignada);
+				    liberarTerminal.send(cajaAsignada);
 				}
-	
 				break;
 			}
+			
 		}
 	}
 	
