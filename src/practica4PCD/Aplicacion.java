@@ -2,9 +2,23 @@ package practica4PCD;
 
 import messagepassing.MailBox;
 
+
+/**
+ * Clase Aplicacion
+ * 
+ * Esta clase representa la aplicación que el proceso de compra del ejercicio 4.
+ * 
+ */
 public class Aplicacion {
 	
 
+	/**
+	 * Método main
+	 * 
+	 * Este método se encarga de ejecutar la aplicación.
+	 * 
+	 * @param args Argumentos de la aplicación
+	 */
 	public static void main(String[] args) {
 		int numClientes = 30;
 
@@ -18,9 +32,7 @@ public class Aplicacion {
 
 		for (int i = 0; i < numClientes; i++) {
 			MailBox recepcionControlado = new MailBox();
-			MailBox envioColaCaja = new MailBox();
 			MailBox recepcionPagarCaja = new MailBox();
-			MailBox impresionTerminalBucle = new MailBox();
 			MailBox enviarPermisoImpresionBucle = new MailBox();
 			recepcionControlador[i] = recepcionControlado;
 			envioPagarCaja[i] = recepcionPagarCaja;
@@ -34,7 +46,6 @@ public class Aplicacion {
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		for (int i = 0; i < numClientes; i++) {
